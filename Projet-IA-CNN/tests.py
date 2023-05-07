@@ -14,110 +14,163 @@ from random import shuffle
 from skimage.util.shape import view_as_blocks
 from skimage import io, transform
 from sklearn.model_selection import train_test_split
+from keras import initializers
 from keras.models import Sequential, Model
 from keras.layers import Dense, Conv2D, Flatten, MaxPool2D
 from keras.layers import LeakyReLU
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.regularizers import l2
 import warnings
+import generator as gen
 
-train_file = open("G:\\Datasets\\CoCo\\train\\labels.json")
-validation_file = open("G:\\Datasets\\CoCo\\validation\\labels.json")
+from PIL import Image
+import pickle
+
+USE_DATASET = gen.USE_DATASET
+
+train_file = open(USE_DATASET + "train\\labels.json")
+if USE_DATASET != gen.CIFAR100:
+    validation_file = open(USE_DATASET + "validation\\labels.json")
+else:
+    validation_file = open(USE_DATASET + "test\\labels.json")
 
 train_data = json.load(train_file)
 validation_data = json.load(validation_file)
 
-def process_image(img):
-    downsample_size = 200
-    img_read = io.imread(img)
-
-    try:
-        img_read = cv2.cvtColor(img_read,cv2.COLOR_GRAY2RGB)
-
-    except:
-        pass
-
-    img_read = transform.resize(img_read, (downsample_size, downsample_size), mode='constant')
+if USE_DATASET != gen.CIFAR100:
+    print(str(len(train_data["annotations"])))
     
-
-    img_read = img_read
-    img_read = tf.expand_dims(img_read, axis=0)
-
+    df = pd.DataFrame.from_dict(train_data["annotations"])
     
-    return img_read
+    dataset_len = len(df["image_id"].unique())
 
-imgs = []
-labels = []
+else:
+    df = pd.DataFrame.from_dict([train_data["labels"]])
+    dataset_len = 50000
 
-print(str(len(train_data["annotations"])))
-
-df = pd.DataFrame.from_dict(train_data["annotations"])
-
-print(df["image_id"].unique()[961])
-print(df["image_id"].unique()[962])
-print(df["image_id"].unique()[963])
+    df = df.T
+    
+    df.reset_index(inplace=True)
+    df = df.rename(columns={"index":"image_id", 0:"category_id"})
 
 
-df_validation = pd.DataFrame.from_dict(validation_data["annotations"])
-
-def one_hot_converter(liste):
-    res = []
-    for i in range(91):
-        if i in liste:
-            res.append(1.0)
+res = [0,0,0]
+try:
+    with open(gen.MEAN_FILE, 'rb') as f:
+        means = pickle.load(f)
+    
+except:
+    for i, image in enumerate(df["image_id"].unique()):
+        if USE_DATASET != gen.CIFAR100:
+            img_read = io.imread(USE_DATASET + "train\\data\\" + str("%012d" % (image,)) + ".jpg")
         else:
-            res.append(0.0)
+            img_read = io.imread(USE_DATASET + "train\\data\\" + str(image) + ".jpg")
 
-    return res
+        try:
+            img_read = cv2.cvtColor(img_read,cv2.COLOR_GRAY2RGB)
 
-def train_gen(datas, batchsize):
-    for i, img in enumerate(datas["image_id"].unique()):
-        x = process_image("G:\\Datasets\\CoCo\\train\\data\\" + str("%012d" % (img,)) + ".jpg")
-        y = one_hot_converter(list(set(datas[datas["image_id"] == img]["category_id"].to_list())))
-        y = np.array(y).reshape(1, 91)
-        yield x, y
+        except:
+            pass
 
-def validation_gen(datas, batchsize):
-    for i, img in enumerate(datas["image_id"].unique()):
-        x = process_image("G:\\Datasets\\CoCo\\validation\\data\\" + str("%012d" % (img,)) + ".jpg")
+        img_read = transform.resize(img_read, (gen.DIM, gen.DIM), mode='constant')
+        img_read = np.array(img_read)
+        img_read = np.sum(img_read, axis=1)
+        img_read = np.sum(img_read, axis=0)
+        res = np.add(res, img_read)
 
-        yield  x
+        if i%100 == 0:
+            print(str(i) + " / " + str(dataset_len) + " images completed")
 
+    div = gen.DIM * gen.DIM * dataset_len
+    means = np.divide(res, div)
+
+    with open(gen.MEAN_FILE, 'wb') as f:
+        pickle.dump(means,f)
+
+#input("Press Enter to continue...")
+if USE_DATASET != gen.CIFAR100:
+    df_validation = pd.DataFrame.from_dict(validation_data["annotations"])
+
+else:
+    df_validation = pd.DataFrame.from_dict([validation_data["labels"]])
+    df_validation = df_validation.T
+    
+    df_validation.reset_index(inplace=True)
+    df_validation = df_validation.rename(columns={"index":"image_id", 0:"category_id"})
+
+print(f"Tensorflow version: {tf.__version__}")
+print(f"Keras Version: {tf.keras.__version__}")
+print("GPU is", "available" if tf.config.list_physical_devices('GPU') else "NOT AVAILABLE")
+
+#input()
+
+#l2_reg = 0.001
 # Model
 model = Sequential()
 
-model.add(Conv2D(64, kernel_size=(3,3), input_shape=(200,200,3)))
-model.add(LeakyReLU(alpha=0.1))
-model.add(MaxPooling2D((2,2)))
+model.add(Conv2D(64, kernel_size=(3,3), input_shape=(224,224,3), kernel_initializer='random_uniform', activation='relu', padding='same'))
+#model.add(Conv2D(64, (3,3), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
-model.add(Conv2D(128, (3,3)))
-model.add(LeakyReLU(alpha=0.1))
-model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(128, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+#model.add(Conv2D(128, (3,3), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
-model.add(Conv2D(256, (3,3)))
-model.add(LeakyReLU(alpha=0.1))
-model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(256, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+model.add(Conv2D(256, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+#model.add(Conv2D(256, (3,3), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
-model.add(Conv2D(512, (3,3)))
-model.add(LeakyReLU(alpha=0.1))
-model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+#model.add(Conv2D(512, (3,3), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
-#model.add(Conv2D(256, (3,3)))
-#model.add(LeakyReLU(alpha=0.1))
-#model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+#model.add(Conv2D(512, (3,3), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
 model.add(Flatten())
 
-model.add(Dense(512))
-model.add(LeakyReLU(alpha=0.3))
+model.add(Dense(4096,activation='relu', kernel_initializer='random_uniform'))
 model.add(Dropout(0.3))
-model.add(Dense(91, activation='softmax'))
-
-
+model.add(Dense(4096,activation='relu', kernel_initializer='random_uniform'))
+model.add(Dense(1000, kernel_initializer='random_uniform'))
+model.add(LeakyReLU(alpha=0.1))
+model.add(Dense(100, activation='sigmoid'))
 
 # Compile the Model
 
 model.compile(optimizer=keras.optimizers.Adam(), loss=keras.losses.CategoricalCrossentropy(), metrics=['accuracy'])
 model.summary()
 
-history = model.fit(train_gen(df, 10), batch_size=10, epochs=25, validation_data = validation_gen(df_validation,10), verbose = 1, validation_steps=3)
+train_generator = gen.DataGenerator(df)
+validation_generator = gen.DataGenerator(df_validation, mode="validation")
+
+#history = model.fit(train_gen(df, 1), batch_size=32, steps_per_epoch = 500, epochs=25, validation_data = validation_gen(df_validation,1), verbose = 1, validation_steps=3)
+history = model.fit(train_generator, batch_size=gen.BATCH_SIZE, steps_per_epoch = 15, epochs=25, validation_data = validation_generator, verbose = 1, validation_steps=3)
+
+# summarize history for accuracy
+
+models = os.scandir("G:\\Datasets\\CoCo\\models\\")
+i = len(list(models))
+model.save("G:\\Datasets\\CoCo\\models\\baby_cnn_"+str(i)+".h5")
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.savefig("G:\\Datasets\\CoCo\\models\\evals\\baby_cnn_"+str(i)+"_acc.png")
+
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.savefig("G:\\Datasets\\CoCo\\models\\evals\\baby_cnn_"+str(i)+"_loss.png")

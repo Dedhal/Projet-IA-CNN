@@ -14,7 +14,7 @@ dataset = foz.load_zoo_dataset(
     split="test",
     max_samples=2500,
     shuffle=True,
-    dataset_dir="G:\Datasets\CoCo"
+    dataset_dir="G:\Datasets\CoCo\\scattered"
 )
 
 session = fo.launch_app(dataset)
@@ -33,12 +33,21 @@ input("Press Enter to continue...")
 # Images will only be downloaded if necessary
 #
 
+#   airplane = 5
+#   apple = 52
+#   horse = 19
+#   tie = 32
+#   toothbrush = 90
+#   person = 1
+#   [5, 52, 19, 1, 90]
+
 dataset = foz.load_zoo_dataset(
     "coco-2017",
     split="train",
     label_types=["segmentations"],
-    max_samples=20000,
-    dataset_dir="G:\Datasets\CoCo"
+    classes=["airplane", "apple", "horse", "person", "toothbrush"],
+    max_samples=5000,
+    dataset_dir="G:\Datasets\CoCo\\scattered"
 )
 
 session.dataset = dataset
@@ -49,8 +58,9 @@ dataset = foz.load_zoo_dataset(
     "coco-2017",
     split="validation",
     label_types=["segmentations"],
-    max_samples=5000,
-    dataset_dir="G:\Datasets\CoCo"
+    classes=["airplane", "apple", "horse", "person", "toothbrush"],
+    max_samples=1000,
+    dataset_dir="G:\Datasets\CoCo\\scattered"
 )
 
 session.dataset = dataset

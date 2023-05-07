@@ -21,8 +21,18 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="cifar-config.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cifar_dl.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="generator.py" />
     <Compile Include="Projet_IA_CNN.py" />
     <Compile Include="tests.py" />
+    <Compile Include="transfer_learning.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
