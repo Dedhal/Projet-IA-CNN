@@ -1,11 +1,13 @@
 import numpy as np
 import keras
 from skimage import io, transform
+from skimage.util import crop
+import matplotlib.pyplot as plt
 import cv2
 import pickle
 
 DIM = 224
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 
 FULL = "G:\\Datasets\\CoCo\\"
 REDUCED = "G:\\Datasets\\CoCo\\reduced\\"
@@ -16,7 +18,7 @@ MEAN_REDUCED = "means_reduced.bin"
 MEAN_SCATTERED = "means_scatter.bin"
 MEAN_CIFAR100 = "means_cifar.bin"
 
-USE_DATASET = CIFAR100
+USE_DATASET = SCATTERED
 
 if USE_DATASET == REDUCED:
     MEAN_FILE = MEAN_REDUCED
@@ -77,43 +79,90 @@ class DataGenerator(keras.utils.Sequence):
     
         return res
 
-    def process_image(self, img):
+    def process_image(self, img, datas=None, category=None):
         downsample_size = DIM
         img_read = io.imread(img)
 
-        try:
-            img_read = cv2.cvtColor(img_read,cv2.COLOR_GRAY2RGB)
 
-        except:
-            pass
+        def search_for_object(datas, category):
+            objects = None
+            if datas != None:
+                for i, j in zip(datas, category):
+                    if j in [5, 19, 32, 52, 90]:
+                        objects = img_read[int(i[1]):int(i[1] + i[3]), int(i[0]):int(i[0] + i[2])]
+                        return objects
 
-        img_read = transform.resize(img_read, (downsample_size, downsample_size), mode='constant')
-        img_read = (img_read - self.means)
-        
-        return img_read
+            return None
+
+        objects = None
+        objects = search_for_object(datas, category)
+
+        if type(objects) == type(None) and type(datas) != type(None):
+            return None, None
+
+        elif type(objects) != type(None) and type(datas) != type(None):
+            try:
+                objects = cv2.cvtColor(objects,cv2.COLOR_GRAY2RGB)
+
+            except:
+                pass
+
+            y = self.one_hot_converter_scatter(category)
+
+            #io.imshow(objects)
+            #plt.show()
+            try:
+                objects = transform.resize(objects, (downsample_size, downsample_size), mode='constant')
+                #objects = (objects - self.means)
+                return objects, y
+            except:
+                return None, None
+
+        else:
+            try:
+                img_read = cv2.cvtColor(img_read,cv2.COLOR_GRAY2RGB)
+
+            except:
+                pass
+
+            img_read = transform.resize(img_read, (downsample_size, downsample_size), mode='constant')
+            img_read = (img_read - self.means)
+            
+            return img_read
 
     def __data_generation(self, list_IDs_temp):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         # Initialization
         X = np.empty((self.batch_size, *self.dim, self.n_channels))
-        Y = np.empty((self.batch_size, 100),dtype=int)
+        Y = np.empty((self.batch_size, 5),dtype=int)
 
+        j = 0
         for i, img in enumerate(list_IDs_temp):
             if self.mode == "train":
                 if USE_DATASET == CIFAR100:
                     x = self.process_image(USE_DATASET + "train\\data\\" + str(img) + ".jpg")
                 else:
-                    x = self.process_image(USE_DATASET + "train\\data\\" + str("%012d" % (img,)) + ".jpg")
+                    x, y = self.process_image(USE_DATASET + "train\\data\\" + str("%012d" % (img,)) + ".jpg", 
+                                           self.datas[self.datas["image_id"] == img]["bbox"].to_list(), 
+                                           self.datas[self.datas["image_id"] == img]["category_id"].to_list())
+                    if type(x) == type(None):
+                        continue
             else:
                 if USE_DATASET == CIFAR100:
                     x = self.process_image(USE_DATASET + "test\\data\\" + str(img) + ".jpg")
                 else:
-                    x = self.process_image(USE_DATASET + "validation\\data\\" + str("%012d" % (img,)) + ".jpg")
-            y = self.one_hot_cifar100(list(set(self.datas[self.datas["image_id"] == img]["category_id"].to_list())))
+                    x, y = self.process_image(USE_DATASET + "validation\\data\\" + str("%012d" % (img,)) + ".jpg", 
+                                           self.datas[self.datas["image_id"] == img]["bbox"].to_list(), 
+                                           self.datas[self.datas["image_id"] == img]["category_id"].to_list())
+                    if type(x) == type(None):
+                        continue
+            #y = self.one_hot_converter_scatter(list(set(self.datas[self.datas["image_id"] == img]["category_id"].to_list())))
             #y = np.array(y).reshape(1, 5)
 
-            X[i,] = x
-            Y[i] = y
+            X[j,] = x
+            Y[j] = y
+
+            j += 1
 
         return X, Y  #keras.utils.to_categorical(y, num_classes=self.n_classes)
 

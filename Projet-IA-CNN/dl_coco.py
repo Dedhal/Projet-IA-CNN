@@ -40,12 +40,13 @@ input("Press Enter to continue...")
 #   toothbrush = 90
 #   person = 1
 #   [5, 52, 19, 1, 90]
+# #   
 
 dataset = foz.load_zoo_dataset(
     "coco-2017",
     split="train",
     label_types=["segmentations"],
-    classes=["airplane", "apple", "horse", "person", "toothbrush"],
+    classes=["airplane", "apple", "horse", "tie", "toothbrush"],
     max_samples=5000,
     dataset_dir="G:\Datasets\CoCo\\scattered"
 )
@@ -58,7 +59,7 @@ dataset = foz.load_zoo_dataset(
     "coco-2017",
     split="validation",
     label_types=["segmentations"],
-    classes=["airplane", "apple", "horse", "person", "toothbrush"],
+    classes=["airplane", "apple", "horse", "tie", "toothbrush"],
     max_samples=1000,
     dataset_dir="G:\Datasets\CoCo\\scattered"
 )
