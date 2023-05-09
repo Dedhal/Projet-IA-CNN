@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>c54de090-8f11-4b37-9c3c-dc05a192d071</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>CNN-IA.py</StartupFile>
+    <StartupFile>transfer_learning.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>

@@ -121,29 +121,29 @@ model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
 model.add(Conv2D(256, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
 model.add(Dropout(0.3))
-model.add(Conv2D(256, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
-model.add(Dropout(0.3))
+#model.add(Conv2D(256, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+#model.add(Dropout(0.3))
 #model.add(Conv2D(256, (3,3), activation='relu', padding='same'))
 model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
 model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
 model.add(Dropout(0.3))
-model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
-model.add(Dropout(0.3))
+#model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+#model.add(Dropout(0.3))
 #model.add(Conv2D(512, (3,3), activation='relu', padding='same'))
 model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
 model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
 model.add(Dropout(0.3))
-model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
-model.add(Dropout(0.3))
+#model.add(Conv2D(512, (3,3), activation='relu', padding='same', kernel_initializer='random_uniform'))
+#model.add(Dropout(0.3))
 #model.add(Conv2D(512, (3,3), activation='relu', padding='same'))
 model.add(MaxPooling2D(pool_size=(2,2), strides=(2, 2)))
 
 model.add(Flatten())
 
-model.add(Dense(1024,activation='relu'))
-model.add(Dropout(0.3))
+#model.add(Dense(1024,activation='relu'))
+#model.add(Dropout(0.3))
 model.add(Dense(512,activation='relu'))
 model.add(Dense(128))
 model.add(LeakyReLU(alpha=0.1))
@@ -158,7 +158,7 @@ train_generator = gen.DataGenerator(df)
 validation_generator = gen.DataGenerator(df_validation, mode="validation")
 
 #history = model.fit(train_gen(df, 1), batch_size=32, steps_per_epoch = 500, epochs=25, validation_data = validation_gen(df_validation,1), verbose = 1, validation_steps=3)
-history = model.fit(train_generator, batch_size=gen.BATCH_SIZE, steps_per_epoch = 10, epochs=25, validation_data = validation_generator, verbose = 1, validation_steps=3)
+history = model.fit(train_generator, batch_size=gen.BATCH_SIZE, steps_per_epoch = 10, epochs=5, validation_data = validation_generator, verbose = 1, validation_steps=3)
 
 # summarize history for accuracy
 

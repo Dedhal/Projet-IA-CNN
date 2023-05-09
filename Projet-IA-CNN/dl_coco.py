@@ -49,7 +49,7 @@ dataset = foz.load_zoo_dataset(
     "coco-2017",
     split="train",
     label_types=["segmentations"],
-    classes=["dog", "cat"],
+    classes=["banana", "stop sign"],
     max_samples=5000,
     dataset_dir="G:\Datasets\CoCo\\biclass"
 )
@@ -62,7 +62,7 @@ dataset = foz.load_zoo_dataset(
     "coco-2017",
     split="validation",
     label_types=["segmentations"],
-    classes=["dog", "cat"],
+    classes=["banana", "stop sign"],
     max_samples=1000,
     dataset_dir="G:\Datasets\CoCo\\biclass"
 )

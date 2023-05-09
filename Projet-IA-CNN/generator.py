@@ -59,7 +59,7 @@ class DataGenerator(keras.utils.Sequence):
         return res
     
     def binary_encoder(self, liste):
-        for i in [17, 18]:
+        for i in [13, 52]:
             if i == 17:
                 return 0
             elif i == 18:
@@ -69,7 +69,7 @@ class DataGenerator(keras.utils.Sequence):
 
     def one_hot_converter_scatter(self, liste):
         res = []
-        for i in [17, 18]:
+        for i in [13, 52]:
             if i in liste:
                 res.append(1)
             else:
@@ -96,7 +96,7 @@ class DataGenerator(keras.utils.Sequence):
             objects = None
             if datas != None:
                 for i, j in zip(datas, category):
-                    if j in [17, 18]:
+                    if j in [13, 52]:
                         objects = img_read[int(i[1]):int(i[1] + i[3]), int(i[0]):int(i[0] + i[2])]
                         return objects
 
