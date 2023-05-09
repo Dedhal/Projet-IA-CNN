@@ -7,11 +7,11 @@ import cv2
 import pickle
 
 DIM = 224
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 
 FULL = "G:\\Datasets\\CoCo\\"
 REDUCED = "G:\\Datasets\\CoCo\\reduced\\"
-SCATTERED = "G:\\Datasets\\CoCo\\scattered\\"
+SCATTERED = "G:\\Datasets\\CoCo\\biclass\\"
 CIFAR100 = "G:\\Datasets\\Cifar100\\"
 
 MEAN_REDUCED = "means_reduced.bin"
@@ -58,10 +58,18 @@ class DataGenerator(keras.utils.Sequence):
     
         return res
     
+    def binary_encoder(self, liste):
+        for i in [17, 18]:
+            if i == 17:
+                return 0
+            elif i == 18:
+                return 1
+            else:
+                return None
 
     def one_hot_converter_scatter(self, liste):
         res = []
-        for i in [5, 19, 32, 52, 90]:
+        for i in [17, 18]:
             if i in liste:
                 res.append(1)
             else:
@@ -88,7 +96,7 @@ class DataGenerator(keras.utils.Sequence):
             objects = None
             if datas != None:
                 for i, j in zip(datas, category):
-                    if j in [5, 19, 32, 52, 90]:
+                    if j in [17, 18]:
                         objects = img_read[int(i[1]):int(i[1] + i[3]), int(i[0]):int(i[0] + i[2])]
                         return objects
 
@@ -134,7 +142,7 @@ class DataGenerator(keras.utils.Sequence):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         # Initialization
         X = np.empty((self.batch_size, *self.dim, self.n_channels))
-        Y = np.empty((self.batch_size, 5),dtype=int)
+        Y = np.empty((self.batch_size, 2),dtype=int)
 
         j = 0
         for i, img in enumerate(list_IDs_temp):
