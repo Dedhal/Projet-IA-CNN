@@ -57,15 +57,6 @@ class DataGenerator(keras.utils.Sequence):
                 res.append(0)
     
         return res
-    
-    def binary_encoder(self, liste):
-        for i in [13, 52]:
-            if i == 17:
-                return 0
-            elif i == 18:
-                return 1
-            else:
-                return None
 
     def one_hot_converter_scatter(self, liste):
         res = []
